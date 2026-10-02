@@ -55,6 +55,56 @@ class AccountTests(TestCase):
         response = self.client.get(reverse("predictor:predict"))
         self.assertRedirects(response, f"{reverse('predictor:login')}?next={reverse('predictor:predict')}")
 
+    def test_every_page_requires_login_except_login_and_register(self):
+        login_url = reverse("predictor:login")
+        pages = [reverse(f"predictor:{n}") for n in ("home", "predict", "history", "export_csv", "account")]
+        pages += [reverse("schema"), reverse("swagger-ui")]
+        for url in pages:
+            response = self.client.get(url)
+            self.assertRedirects(response, f"{login_url}?next={url}", fetch_redirect_response=False, msg_prefix=url)
+
+    def test_api_requires_login(self):
+        # DRF views bypass LoginRequiredMiddleware; they answer anonymous clients with a JSON 403.
+        for name in ("api_model_info", "api_history", "api_dashboard"):
+            self.assertEqual(self.client.get(reverse(f"predictor:{name}")).status_code, 403, name)
+        response = self.client.post(reverse("predictor:api_predict"), GOOD, content_type="application/json")
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Prediction.objects.count(), 0)
+
+    def test_login_and_register_pages_are_public(self):
+        for name in ("login", "register"):
+            self.assertEqual(self.client.get(reverse(f"predictor:{name}")).status_code, 200, name)
+
+    def test_navbar_links_depend_on_login_state(self):
+        response = self.client.get(reverse("predictor:login"))
+        self.assertContains(response, reverse("predictor:register"))
+        self.assertNotContains(response, f'href="{reverse("predictor:history")}"')
+        self.assertNotContains(response, f'href="{reverse("predictor:predict")}"')
+
+        self.client.force_login(User.objects.create_user(username="nav-user", password="StrongPass123!"))
+        response = self.client.get(reverse("predictor:home"))
+        self.assertContains(response, f'href="{reverse("predictor:history")}"')
+        self.assertContains(response, f'href="{reverse("predictor:predict")}"')
+
+    def test_login_only_follows_safe_next_urls(self):
+        User.objects.create_user(username="next-user", password="StrongPass123!")
+        creds = {"username": "next-user", "password": "StrongPass123!"}
+        login_url = reverse("predictor:login")
+
+        response = self.client.post(f"{login_url}?next={reverse('predictor:history')}", creds)
+        self.assertRedirects(response, reverse("predictor:history"))
+
+        self.client.post(reverse("predictor:logout"))
+        for unsafe in ("https://evil.example/", "//evil.example/"):
+            response = self.client.post(f"{login_url}?next={unsafe}", creds)
+            self.assertRedirects(response, reverse("predictor:home"), msg_prefix=unsafe)
+            self.client.post(reverse("predictor:logout"))
+
+    def test_logout_returns_to_login_page(self):
+        self.client.force_login(User.objects.create_user(username="logout-user", password="StrongPass123!"))
+        response = self.client.post(reverse("predictor:logout"))
+        self.assertRedirects(response, reverse("predictor:login"))
+
     def test_account_page_requires_login(self):
         self.client.force_login(User.objects.create_user(username="account-user", password="StrongPass123!"))
         response = self.client.get(reverse("predictor:account"))

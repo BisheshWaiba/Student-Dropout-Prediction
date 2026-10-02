@@ -1,0 +1,31 @@
+<div class="auth-field">
+  <label class="auth-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {% if field.field.widget.input_type == "password" %}
+  <div class="auth-control">
+    {{ field }}
+    <button
+      type="button"
+      class="auth-reveal"
+      data-reveal="{{ field.id_for_label }}"
+      aria-label="Show password"
+      aria-pressed="false"
+      hidden
+    >
+      <i class="bi bi-eye" aria-hidden="true"></i>
+    </button>
+  </div>
+  {% else %} {{ field }} {% endif %} {% if field.errors %}
+  <div class="auth-errors" id="{{ field.auto_id }}_error">
+    {% for error in field.errors %}
+    <p class="auth-error">
+      <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+      <span>{{ error }}</span>
+    </p>
+    {% endfor %}
+  </div>
+  {% endif %} {% if field.help_text %}
+  <div class="auth-help" id="{{ field.auto_id }}_helptext">
+    {{ field.help_text|safe }}
+  </div>
+  {% endif %}
+</div>

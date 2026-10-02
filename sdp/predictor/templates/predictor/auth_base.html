@@ -1,0 +1,59 @@
+{% extends "predictor/base.html" %} {% load static %} {% block head %}
+<link href="{% static 'predictor/auth.css' %}" rel="stylesheet" />
+{% endblock %} {% block content %}
+<div class="auth">
+  <div class="auth-main">
+    <header>
+      <h1 class="auth-title">{% block heading %}{% endblock %}</h1>
+      <p class="auth-lede">{% block lede %}{% endblock %}</p>
+    </header>
+    <form method="post" class="auth-form" data-auth-form novalidate>
+      {% csrf_token %} {% block hidden_fields %}{% endblock %} {% if form.non_field_errors %}
+      <div class="auth-alert" role="alert">
+        <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+        <div>
+          {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %} {% for field in form %} {% include "predictor/_auth_field.html" %} {% endfor %}
+      <button class="btn btn-primary auth-submit" type="submit">
+        <span
+          class="spinner-border spinner-border-sm"
+          aria-hidden="true"
+          hidden
+        ></span>
+        <span>{% block submit_label %}{% endblock %}</span>
+      </button>
+    </form>
+    <p class="auth-switch">{% block switch %}{% endblock %}</p>
+  </div>
+  <aside class="auth-aside">
+    <div>
+      <h2 class="auth-aside-title">
+        Predict whether a student will drop out, remain enrolled or graduate.
+      </h2>
+      <p class="auth-aside-lede">
+        A mid-course early-warning tool to support advisors.
+      </p>
+    </div>
+    <ul class="auth-points">
+      <li>
+        <i class="bi bi-bar-chart-line" aria-hidden="true"></i>
+        <span>A probability for each outcome and a dropout-risk level</span>
+      </li>
+      <li>
+        <i class="bi bi-list-check" aria-hidden="true"></i>
+        <span>Suggested actions with every result</span>
+      </li>
+      <li>
+        <i class="bi bi-lock" aria-hidden="true"></i>
+        <span>A private history you can search, filter and export to CSV</span>
+      </li>
+    </ul>
+  </aside>
+</div>
+{% endblock %} {% block scripts %}
+<script src="{% static 'predictor/auth.js' %}" defer></script>
+{% endblock %}

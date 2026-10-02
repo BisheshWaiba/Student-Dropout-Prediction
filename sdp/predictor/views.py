@@ -3,16 +3,17 @@ from pathlib import Path
 
 from django.contrib import messages
 from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_not_required, login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.paginator import Paginator
 from django.db.models import Avg, Count
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from . import ml
@@ -57,7 +58,7 @@ def _meta_or_none():
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def api_model_info(request):
     meta, error = _meta_or_none()
     if error:
@@ -66,7 +67,7 @@ def api_model_info(request):
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def api_history(request):
     qs = Prediction.objects.all().order_by("-created_at")
     items = []
@@ -86,7 +87,7 @@ def api_history(request):
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def api_dashboard(request):
     meta, _ = _meta_or_none()
     counts = {r["predicted_label"]: r["n"] for r in Prediction.objects.values("predicted_label").annotate(n=Count("id"))}
@@ -107,7 +108,7 @@ def api_dashboard(request):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def api_predict(request):
     meta, error = _meta_or_none()
     if error:
@@ -245,6 +246,7 @@ def delete_prediction(request, pk):
     return redirect("predictor:history")
 
 
+@login_not_required
 def register(request):
     if request.user.is_authenticated:
         return redirect("predictor:account")
@@ -257,13 +259,19 @@ def register(request):
     return render(request, "predictor/register.html", {"form": form})
 
 
+@login_not_required
 def account_login(request):
     if request.user.is_authenticated:
         return redirect("predictor:account")
     form = AuthenticationForm(request, data=request.POST or None)
     if form.is_valid():
         login(request, form.get_user())
-        return redirect(request.GET.get("next") or "predictor:home")
+        # Every page now bounces here with ?next=..., so only follow it when it stays on this site.
+        next_url = request.GET.get("next", "")
+        if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()},
+                                           require_https=request.is_secure()):
+            return redirect(next_url)
+        return redirect("predictor:home")
     return render(request, "predictor/login.html", {"form": form})
 
 

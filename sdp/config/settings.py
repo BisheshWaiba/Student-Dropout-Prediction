@@ -25,6 +25,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.auth.middleware.LoginRequiredMiddleware",  # every view needs login unless marked @login_not_required
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -63,9 +64,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "predictor:login"
 LOGIN_REDIRECT_URL = "predictor:home"
-LOGOUT_REDIRECT_URL = "predictor:home"
+LOGOUT_REDIRECT_URL = "predictor:login"
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # DRF views bypass LoginRequiredMiddleware, so API views are protected by default here instead.
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
 }
 SPECTACULAR_SETTINGS = {
     "TITLE": "Student Dropout Predictor API",
