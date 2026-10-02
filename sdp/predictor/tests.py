@@ -31,6 +31,19 @@ class PageTests(TestCase):
             self.assertEqual(self.client.get(reverse(f"predictor:{name}")).status_code, 200, name)
 
 
+class HomePageTests(TestCase):
+    def setUp(self):
+        if not MODEL_OK:
+            self.skipTest("Model files not found in ml_model/")
+        self.client.force_login(User.objects.create_user(username="home-user", password="StrongPass123!"))
+
+    def test_accuracy_is_shown_as_a_percentage(self):
+        accuracy = ml.get_meta()["metrics"]["accuracy"] * 100
+        response = self.client.get(reverse("predictor:home"))
+        self.assertContains(response, f"{accuracy:.1f}%")
+        self.assertNotContains(response, f"{accuracy / 100:.2f}%")
+
+
 class AccountTests(TestCase):
     def test_registration_login_and_logout(self):
         response = self.client.post(reverse("predictor:register"), {

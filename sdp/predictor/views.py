@@ -151,6 +151,7 @@ def api_predict(request):
 def home(request):
     meta, error = _meta_or_none()
     return render(request, "predictor/home.html", {"meta": meta, "model_error": error,
+                                                   "accuracy_pct": meta["metrics"]["accuracy"] * 100 if meta else None,
                                                    "total": Prediction.objects.filter(owner=request.user).count()
                                                    if request.user.is_authenticated else 0})
 
