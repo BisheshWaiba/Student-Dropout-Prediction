@@ -1,0 +1,126 @@
+{% extends "predictor/base.html" %} {% block title %}History - Student Dropout
+Predictor{% endblock %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Prediction history</h2>
+</div>
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-4">
+    <input
+      name="q"
+      value="{{ q }}"
+      class="form-control"
+      placeholder="Search student name / ID"
+    />
+  </div>
+  <div class="col-md-3">
+    <select name="outcome" class="form-select">
+      <option value="">All outcomes</option>
+      {% for outcome_option in outcomes %}
+      <option
+        value="{{ outcome_option }}"
+        {%
+        if
+        outcome_option=""
+        ="outcome"
+        %}selected{%
+        endif
+        %}
+      >
+        {{ outcome_option }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-primary">Filter</button>
+    <a class="btn btn-light" href="{% url 'predictor:history' %}">Reset</a>
+  </div>
+</form>
+<div class="card p-3">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Student</th>
+          <th>Outcome</th>
+          <th>Dropout %</th>
+          <th>Enrolled %</th>
+          <th>Graduate %</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in page %}
+        <tr>
+          <td>{{ p.pk }}</td>
+          <td>{{ p.student_ref|default:"-" }}</td>
+          <td>
+            <span
+              class="badge text-bg-{% if p.predicted_label == 'Dropout' %}danger{% elif p.predicted_label == 'Enrolled' %}warning{% else %}success{% endif %}"
+              >{{ p.predicted_label }}</span
+            >
+          </td>
+          <td>{% widthratio p.prob_dropout 1 100 %}</td>
+          <td>{% widthratio p.prob_enrolled 1 100 %}</td>
+          <td>{% widthratio p.prob_graduate 1 100 %}</td>
+          <td class="text-muted">{{ p.created_at|date:"d M Y H:i" }}</td>
+          <td class="text-end text-nowrap">
+            <a
+              class="btn btn-sm btn-outline-primary"
+              href="{% url 'predictor:result' p.pk %}"
+              >View</a
+            >
+            <form
+              method="post"
+              action="{% url 'predictor:delete' p.pk %}"
+              class="d-inline"
+              onsubmit="return confirm('Delete this prediction?');"
+            >
+              {% csrf_token %}<button class="btn btn-sm btn-outline-danger">
+                Delete
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">
+            No predictions yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% if page.has_other_pages %}
+<nav class="mt-3">
+  <ul class="pagination">
+    {% if page.has_previous %}
+    <li class="page-item">
+      <a
+        class="page-link"
+        href="?page={{ page.previous_page_number }}&q={{ q }}&outcome={{ outcome }}"
+        >Previous</a
+      >
+    </li>
+    {% endif %}
+    <li class="page-item disabled">
+      <span class="page-link"
+        >Page {{ page.number }} of {{ page.paginator.num_pages }}</span
+      >
+    </li>
+    {% if page.has_next %}
+    <li class="page-item">
+      <a
+        class="page-link"
+        href="?page={{ page.next_page_number }}&q={{ q }}&outcome={{ outcome }}"
+        >Next</a
+      >
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %} {% endblock %}

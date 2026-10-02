@@ -1,0 +1,50 @@
+{% extends "predictor/base.html" %}
+{% block title %}Dashboard - Student Dropout Predictor{% endblock %}
+{% block content %}
+<h2 class="mb-4">Dashboard</h2>
+<div class="row g-4 text-center mb-4">
+  <div class="col-6 col-md-3"><div class="card p-3"><div class="stat-value">{{ total }}</div>Total predictions</div></div>
+  <div class="col-6 col-md-3"><div class="card p-3"><div class="stat-value text-danger">{{ high_risk }}</div>High dropout risk</div></div>
+  <div class="col-6 col-md-3"><div class="card p-3"><div class="stat-value">{{ avg_dropout|floatformat:1 }}%</div>Avg dropout probability</div></div>
+  <div class="col-6 col-md-3"><div class="card p-3"><div class="stat-value">{% if meta %}{{ meta.metrics.macro_f1 }}{% else %}-{% endif %}</div>Model macro F1</div></div>
+</div>
+<div class="row g-4 mb-4">
+  <div class="col-md-4"><div class="card p-3"><h6>Predictions by outcome</h6><canvas id="predChart"></canvas></div></div>
+  <div class="col-md-4"><div class="card p-3"><h6>Training data: class distribution</h6><canvas id="classChart"></canvas></div></div>
+  <div class="col-md-4"><div class="card p-3"><h6>Top features (importance)</h6><canvas id="impChart"></canvas></div></div>
+</div>
+<div class="card p-3">
+  <h6>Recent predictions</h6>
+  <table class="table table-sm mb-0"><tbody>
+  {% for p in recent %}<tr><td>{{ p.student_ref|default:"Student" }}</td>
+    <td><span class="badge text-bg-{% if p.predicted_label == 'Dropout' %}danger{% elif p.predicted_label == 'Enrolled' %}warning{% else %}success{% endif %}">{{ p.predicted_label }}</span></td>
+    <td class="text-muted">{{ p.created_at|date:"d M H:i" }}</td>
+    <td class="text-end"><a href="{% url 'predictor:result' p.pk %}">View</a></td></tr>
+  {% empty %}<tr><td class="text-muted">No predictions yet.</td></tr>{% endfor %}
+  </tbody></table>
+</div>
+{{ pred_counts|json_script:"pred-data" }}
+{{ class_dist|json_script:"class-data" }}
+{{ importance|json_script:"imp-data" }}
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+const colours = {Dropout: "#dc3545", Enrolled: "#ffc107", Graduate: "#198754"};
+const load = id => JSON.parse(document.getElementById(id).textContent);
+const doughnut = (id, data) => new Chart(document.getElementById(id), {
+  type: "doughnut",
+  data: {labels: Object.keys(data), datasets: [{data: Object.values(data), backgroundColor: Object.keys(data).map(k => colours[k])}]},
+  options: {plugins: {legend: {position: "bottom"}}}
+});
+doughnut("predChart", load("pred-data"));
+doughnut("classChart", load("class-data"));
+const imp = load("imp-data");
+new Chart(document.getElementById("impChart"), {
+  type: "bar",
+  data: {labels: Object.keys(imp).map(s => s.replaceAll("curricular_units_", "").replaceAll("_", " ")),
+         datasets: [{data: Object.values(imp), backgroundColor: "#2c3e91"}]},
+  options: {indexAxis: "y", plugins: {legend: {display: false}}}
+});
+</script>
+{% endblock %}

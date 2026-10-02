@@ -1,0 +1,46 @@
+{% extends "predictor/base.html" %}
+{% block title %}Model - Student Dropout Predictor{% endblock %}
+{% block content %}
+<h2 class="mb-4">About the model</h2>
+{% if model_error %}{% include "predictor/_model_error.html" %}{% else %}
+<div class="row g-4 mb-4">
+  <div class="col-md-5"><div class="card p-4 h-100">
+    <h5>Overview</h5>
+    <table class="table table-sm mb-0"><tbody>
+      <tr><th>Algorithm</th><td>{{ meta.model_name }}</td></tr>
+      <tr><th>Classes</th><td>{{ meta.class_names|join:", " }}</td></tr>
+      <tr><th>Input features</th><td>{{ meta.features|length }}</td></tr>
+      <tr><th>Training / test rows</th><td>{{ meta.train_size }} / {{ meta.test_size }}</td></tr>
+      <tr><th>Dataset</th><td>UCI - Predict Students' Dropout and Academic Success</td></tr>
+    </tbody></table></div></div>
+  <div class="col-md-7"><div class="card p-4 h-100">
+    <h5>Test-set performance</h5>
+    <div class="row text-center">
+      <div class="col-6 col-md-3"><div class="stat-value">{% widthratio meta.metrics.accuracy 1 100 %}%</div>Accuracy</div>
+      <div class="col-6 col-md-3"><div class="stat-value">{{ meta.metrics.macro_f1 }}</div>Macro F1</div>
+      <div class="col-6 col-md-3"><div class="stat-value">{{ meta.metrics.weighted_f1 }}</div>Weighted F1</div>
+      <div class="col-6 col-md-3"><div class="stat-value">{{ meta.metrics.roc_auc_ovr }}</div>ROC-AUC</div>
+    </div></div></div>
+</div>
+{% if comparison %}
+<div class="card p-4 mb-4"><h5>Model comparison</h5>
+  <div class="table-responsive"><table class="table table-sm table-striped mb-0">
+    <thead><tr><th>Feature set</th><th>Model</th><th>CV macro-F1</th><th>Test accuracy</th><th>Test macro-F1</th></tr></thead>
+    <tbody>{% for r in comparison %}<tr><td>{{ r.feature_set }}</td><td>{{ r.model }}</td><td>{{ r.cv_f1 }}</td><td>{{ r.test_acc }}</td><td>{{ r.test_f1 }}</td></tr>{% endfor %}</tbody>
+  </table></div></div>
+{% endif %}
+<div class="card p-4 mb-4"><h5>Input features</h5>
+  <div class="table-responsive"><table class="table table-sm mb-0">
+    <thead><tr><th>Feature</th><th>Description</th><th>Dataset mean</th></tr></thead>
+    <tbody>{% for f in meta.features %}<tr><td>{{ f.label }}</td><td class="text-muted">{{ f.help }}</td><td>{{ f.mean }}</td></tr>{% endfor %}</tbody>
+  </table></div></div>
+{% if figures %}
+<h5 class="mb-3">Training notebook figures</h5>
+<div class="row g-4">{% load static %}
+  {% for path, caption in figures %}
+  <div class="col-md-6"><div class="card p-3"><h6>{{ caption }}</h6><img class="figure-img" src="{% static path %}" alt="{{ caption }}"></div></div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,7 @@
+Copy these files from the notebook's model/ output folder into THIS folder:
+
+  student_model.pkl        (required)
+  model_meta.json          (required)
+  model_comparison.csv     (optional - shows the model comparison table on the Model page)
+
+Then restart the server.

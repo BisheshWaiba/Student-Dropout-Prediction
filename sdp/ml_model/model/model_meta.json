@@ -1,0 +1,182 @@
+{
+  "model_name": "Logistic Regression",
+  "best_params": {
+    "C": 10
+  },
+  "class_names": [
+    "Dropout",
+    "Enrolled",
+    "Graduate"
+  ],
+  "features": [
+    {
+      "name": "age_at_enrollment",
+      "label": "Age at enrollment",
+      "help": "Age of the student when enrolling (years)",
+      "type": "int",
+      "min": 17.0,
+      "max": 70.0,
+      "mean": 23.27,
+      "median": 20.0
+    },
+    {
+      "name": "admission_grade",
+      "label": "Admission grade",
+      "help": "Admission grade (0-200)",
+      "type": "float",
+      "min": 95.0,
+      "max": 190.0,
+      "mean": 126.98,
+      "median": 126.1
+    },
+    {
+      "name": "previous_qualification_grade",
+      "label": "Previous qualification grade",
+      "help": "Grade of previous studies (0-200)",
+      "type": "float",
+      "min": 95.0,
+      "max": 190.0,
+      "mean": 132.61,
+      "median": 133.1
+    },
+    {
+      "name": "gender",
+      "label": "Gender",
+      "help": "1 = Male, 0 = Female",
+      "type": "binary",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.35,
+      "median": 0.0
+    },
+    {
+      "name": "scholarship_holder",
+      "label": "Scholarship holder",
+      "help": "1 = Yes, 0 = No",
+      "type": "binary",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.25,
+      "median": 0.0
+    },
+    {
+      "name": "debtor",
+      "label": "Debtor",
+      "help": "1 = Student has unpaid debts, 0 = No",
+      "type": "binary",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.11,
+      "median": 0.0
+    },
+    {
+      "name": "tuition_fees_up_to_date",
+      "label": "Tuition fees up to date",
+      "help": "1 = Yes, 0 = No",
+      "type": "binary",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.88,
+      "median": 1.0
+    },
+    {
+      "name": "displaced",
+      "label": "Displaced",
+      "help": "1 = Lives away from home, 0 = No",
+      "type": "binary",
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.55,
+      "median": 1.0
+    },
+    {
+      "name": "curricular_units_1st_sem_enrolled",
+      "label": "1st sem: units enrolled",
+      "help": "Course units enrolled in semester 1",
+      "type": "int",
+      "min": 0.0,
+      "max": 26.0,
+      "mean": 6.27,
+      "median": 6.0
+    },
+    {
+      "name": "curricular_units_1st_sem_approved",
+      "label": "1st sem: units approved",
+      "help": "Course units passed in semester 1",
+      "type": "int",
+      "min": 0.0,
+      "max": 26.0,
+      "mean": 4.71,
+      "median": 5.0
+    },
+    {
+      "name": "curricular_units_1st_sem_grade",
+      "label": "1st sem: average grade",
+      "help": "Average grade in semester 1 (0-20)",
+      "type": "float",
+      "min": 0.0,
+      "max": 18.875,
+      "mean": 10.64,
+      "median": 12.285714285714286
+    },
+    {
+      "name": "curricular_units_2nd_sem_enrolled",
+      "label": "2nd sem: units enrolled",
+      "help": "Course units enrolled in semester 2",
+      "type": "int",
+      "min": 0.0,
+      "max": 23.0,
+      "mean": 6.23,
+      "median": 6.0
+    },
+    {
+      "name": "curricular_units_2nd_sem_approved",
+      "label": "2nd sem: units approved",
+      "help": "Course units passed in semester 2",
+      "type": "int",
+      "min": 0.0,
+      "max": 20.0,
+      "mean": 4.44,
+      "median": 5.0
+    },
+    {
+      "name": "curricular_units_2nd_sem_grade",
+      "label": "2nd sem: average grade",
+      "help": "Average grade in semester 2 (0-20)",
+      "type": "float",
+      "min": 0.0,
+      "max": 18.571428571428573,
+      "mean": 10.23,
+      "median": 12.2
+    }
+  ],
+  "metrics": {
+    "accuracy": 0.7446,
+    "macro_f1": 0.7093,
+    "weighted_f1": 0.7569,
+    "roc_auc_ovr": 0.8708
+  },
+  "train_size": 3539,
+  "test_size": 885,
+  "feature_importance": {
+    "curricular_units_2nd_sem_approved": 0.2505,
+    "curricular_units_1st_sem_approved": 0.1351,
+    "curricular_units_2nd_sem_grade": 0.0817,
+    "curricular_units_2nd_sem_enrolled": 0.07,
+    "tuition_fees_up_to_date": 0.0532,
+    "curricular_units_1st_sem_enrolled": 0.038,
+    "age_at_enrollment": 0.0291,
+    "gender": 0.0147,
+    "curricular_units_1st_sem_grade": 0.0092,
+    "debtor": 0.009,
+    "admission_grade": 0.0076,
+    "displaced": 0.006,
+    "scholarship_holder": 0.005,
+    "previous_qualification_grade": 0.0028
+  },
+  "class_distribution": {
+    "Graduate": 2209,
+    "Dropout": 1421,
+    "Enrolled": 794
+  }
+}

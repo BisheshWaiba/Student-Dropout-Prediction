@@ -1,0 +1,76 @@
+{% extends "predictor/base.html" %} {% block content %}
+<div class="hero p-5 mb-4">
+  <h1 class="fw-bold">Predict student dropout and academic success</h1>
+  <p class="lead mb-4">
+    A machine-learning early-warning tool: enter a student's academic and
+    financial details and get the probability of <b>Dropout</b>,
+    <b>Enrolled</b> or <b>Graduate</b>.
+  </p>
+  <a href="{% url 'predictor:predict' %}" class="btn btn-light btn-lg">
+    <i class="bi bi-lightning-charge-fill me-1"></i>Make a prediction
+  </a>
+</div>
+
+{% if model_error %} {% include "predictor/_model_error.html" %} {% endif %}
+
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="card h-100 p-4">
+      <h5><i class="bi bi-1-circle text-primary me-2"></i>Enter details</h5>
+      <p class="mb-0 text-muted">
+        Fill in 14 simple fields: age, grades, scholarship, tuition status and
+        semester results.
+      </p>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card h-100 p-4">
+      <h5><i class="bi bi-2-circle text-primary me-2"></i>Get a prediction</h5>
+      <p class="mb-0 text-muted">
+        {% if meta %} A trained {{ meta.model_name }} model returns
+        probabilities for all three outcomes. {% else %} A trained scikit-learn
+        model returns probabilities for all three outcomes. {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card h-100 p-4">
+      <h5><i class="bi bi-3-circle text-primary me-2"></i>Take action</h5>
+      <p class="mb-0 text-muted">
+        Each result includes a risk level and suggested support actions. All
+        predictions are saved to the history.
+      </p>
+    </div>
+  </div>
+</div>
+
+{% if meta %}
+<div class="row g-4 text-center">
+  <div class="col-6 col-md-3">
+    <div class="card p-3">
+      <div class="stat-value">{{ meta.metrics.accuracy|floatformat:2 }}%</div>
+      Test accuracy
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3">
+      <div class="stat-value">{{ meta.metrics.macro_f1|floatformat:3 }}</div>
+      Macro F1
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3">
+      <div class="stat-value">{{ meta.metrics.roc_auc_ovr|floatformat:3 }}</div>
+      ROC-AUC (OvR)
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3">
+      <div class="stat-value">{{ total }}</div>
+      Predictions made
+    </div>
+  </div>
+</div>
+{% endif %} {% endblock %}
