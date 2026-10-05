@@ -31,23 +31,36 @@
         </button>
         <div class="collapse navbar-collapse" id="nav">
           <ul class="navbar-nav ms-auto">
+            {% with page=request.resolver_match.url_name %}
             {% if user.is_authenticated %}
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'predictor:home' %}">Home</a>
+              <a
+                class="nav-link{% if page == 'home' %} active{% endif %}"
+                {% if page == 'home' %}aria-current="page"{% endif %}
+                href="{% url 'predictor:home' %}"
+                >Home</a
+              >
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'predictor:predict' %}"
+              <a
+                class="nav-link{% if page == 'predict' %} active{% endif %}"
+                {% if page == 'predict' %}aria-current="page"{% endif %}
+                href="{% url 'predictor:predict' %}"
                 >Predict</a
               >
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'predictor:history' %}"
+              <a
+                class="nav-link{% if page == 'history' or page == 'result' %} active{% endif %}"
+                {% if page == 'history' or page == 'result' %}aria-current="page"{% endif %}
+                href="{% url 'predictor:history' %}"
                 >History</a
               >
             </li>
             <li class="nav-item">
               <a
-                class="nav-link profile-link"
+                class="nav-link profile-link{% if page == 'account' %} active{% endif %}"
+                {% if page == 'account' %}aria-current="page"{% endif %}
                 href="{% url 'predictor:account' %}"
                 title="Account"
                 aria-label="Account ({{ user.username }})"
@@ -59,14 +72,23 @@
             </li>
             {% else %}
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'predictor:login' %}">Log in</a>
+              <a
+                class="nav-link{% if page == 'login' %} active{% endif %}"
+                {% if page == 'login' %}aria-current="page"{% endif %}
+                href="{% url 'predictor:login' %}"
+                >Log in</a
+              >
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'predictor:register' %}"
+              <a
+                class="nav-link{% if page == 'register' %} active{% endif %}"
+                {% if page == 'register' %}aria-current="page"{% endif %}
+                href="{% url 'predictor:register' %}"
                 >Create account</a
               >
             </li>
             {% endif %}
+            {% endwith %}
           </ul>
         </div>
       </div>

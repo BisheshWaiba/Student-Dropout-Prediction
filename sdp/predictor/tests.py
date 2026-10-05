@@ -109,6 +109,19 @@ class AccountTests(TestCase):
         self.assertContains(response, f'href="{reverse("predictor:history")}"')
         self.assertContains(response, f'href="{reverse("predictor:predict")}"')
 
+    def test_navbar_marks_only_the_current_page(self):
+        # Logged out: the login page marks "Log in".
+        response = self.client.get(reverse("predictor:login"))
+        self.assertContains(response, 'aria-current="page"', count=1)
+        self.assertRegex(response.content.decode(), r'aria-current="page"\s+href="/account/login/"')
+
+        self.client.force_login(User.objects.create_user(username="active-user", password="StrongPass123!"))
+        for name in ("home", "predict", "history", "account"):
+            url = reverse(f"predictor:{name}")
+            html = self.client.get(url).content.decode()
+            self.assertEqual(html.count('aria-current="page"'), 1, name)
+            self.assertRegex(html, rf'aria-current="page"\s+href="{url}"')
+
     def test_login_only_follows_safe_next_urls(self):
         User.objects.create_user(username="next-user", password="StrongPass123!")
         creds = {"username": "next-user", "password": "StrongPass123!"}
