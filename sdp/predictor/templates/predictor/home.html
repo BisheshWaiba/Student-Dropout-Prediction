@@ -1,4 +1,4 @@
-{% extends "predictor/base.html" %} {% load static %} {% block title %}Dashboard - Student Dropout Predictor{% endblock %}
+{% extends "predictor/base.html" %} {% load static %} {% block title %}Home - Student Dropout Predictor{% endblock %}
 {% block head %}
 <link href="{% static 'predictor/formpage.css' %}" rel="stylesheet" />
 <link href="{% static 'predictor/home.css' %}" rel="stylesheet" />
@@ -7,7 +7,7 @@
 <div class="fp fp-wide">
   <div class="fp-top">
     <div class="fp-top-text">
-      <h1 class="fp-title">Dashboard</h1>
+      <h1 class="fp-title">Home</h1>
       <p class="fp-lede">A snapshot of your predictions and the model behind them.</p>
     </div>
     <a href="{% url 'predictor:predict' %}" class="btn fp-btn fp-btn-primary">
