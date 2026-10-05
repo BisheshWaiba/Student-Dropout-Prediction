@@ -135,6 +135,83 @@ class AccountTests(TestCase):
         self.assertContains(response, "account-user")
 
 
+class AccountManagementTests(TestCase):
+    PASSWORD = "StrongPass123!"
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="manage-user", email="old@example.com", password=self.PASSWORD)
+        self.client.force_login(self.user)
+        self.url = reverse("predictor:account")
+
+    def _prediction(self, owner):
+        return Prediction.objects.create(owner=owner, inputs={}, predicted_label="Graduate",
+                                         prob_dropout=0.1, prob_enrolled=0.2, prob_graduate=0.7)
+
+    def test_email_can_be_changed(self):
+        response = self.client.post(self.url, {"action": "email", "email": "new@example.com"})
+        self.assertRedirects(response, self.url)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "new@example.com")
+        self.assertContains(self.client.get(self.url), "new@example.com")
+
+    def test_invalid_email_is_rejected(self):
+        for email in ("", "not-an-email"):
+            response = self.client.post(self.url, {"action": "email", "email": email})
+            self.assertEqual(response.status_code, 200, email)
+            self.assertIn("email", response.context["email_form"].errors, email)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "old@example.com")
+
+    def test_password_can_be_changed_and_session_survives(self):
+        response = self.client.post(self.url, {
+            "action": "password", "old_password": self.PASSWORD,
+            "new_password1": "BrandNewPass456!", "new_password2": "BrandNewPass456!",
+        })
+        self.assertRedirects(response, self.url)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("BrandNewPass456!"))
+        self.assertEqual(self.client.get(self.url).status_code, 200)  # still logged in
+
+    def test_password_change_needs_the_current_password(self):
+        response = self.client.post(self.url, {
+            "action": "password", "old_password": "wrong",
+            "new_password1": "BrandNewPass456!", "new_password2": "BrandNewPass456!",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("old_password", response.context["password_form"].errors)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(self.PASSWORD))
+
+    def test_delete_needs_the_correct_password(self):
+        response = self.client.post(self.url, {"action": "delete", "password": "wrong"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("password", response.context["delete_form"].errors)
+        self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
+
+    def test_delete_removes_account_and_its_predictions_only(self):
+        other = User.objects.create_user(username="other-user", password=self.PASSWORD)
+        self._prediction(self.user)
+        kept = self._prediction(other)
+        response = self.client.post(self.url, {"action": "delete", "password": self.PASSWORD})
+        self.assertRedirects(response, reverse("predictor:login"))
+        self.assertFalse(User.objects.filter(pk=self.user.pk).exists())
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertEqual(list(Prediction.objects.values_list("pk", flat=True)), [kept.pk])
+
+    def test_admin_accounts_cannot_be_deleted_here(self):
+        self.user.is_superuser = True
+        self.user.save()
+        response = self.client.post(self.url, {"action": "delete", "password": self.PASSWORD})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
+
+    def test_management_requires_login(self):
+        self.client.logout()
+        response = self.client.post(self.url, {"action": "delete", "password": self.PASSWORD})
+        self.assertRedirects(response, f"{reverse('predictor:login')}?next={self.url}")
+        self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
+
+
 class PredictionTests(TestCase):
     def setUp(self):
         if not MODEL_OK:

@@ -16,3 +16,6 @@ footer { color: #6b7280; font-size: .85rem; }
 .profile-link .avatar { transition: box-shadow .15s; }
 .profile-link:hover .avatar { box-shadow: 0 0 0 3px rgba(255, 255, 255, .35); }
 .profile-link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.form-text ul { margin: 0; padding-left: 1.1rem; }
+.card-danger { border: 1px solid #f1b5bc; }
+.delete-form { max-width: 24rem; }

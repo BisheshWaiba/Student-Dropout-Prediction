@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import PasswordChangeForm, UserCreationForm
 
 # Hard, domain-based limits (independent of the training-data min/max)
 LIMITS = {
@@ -49,6 +49,42 @@ class RegistrationForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         fields = ("username", "email")
+
+
+class EmailChangeForm(forms.Form):
+    email = forms.EmailField(label="Email address", max_length=254,
+                             widget=forms.EmailInput(attrs={"class": "form-control", "autocomplete": "email"}))
+
+
+class AccountPasswordChangeForm(PasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs["class"] = "form-control"
+        # Django autofocuses this field, which would scroll the Account page down to it on every load.
+        self.fields["old_password"].widget.attrs.pop("autofocus", None)
+
+
+class AccountDeleteForm(forms.Form):
+    password = forms.CharField(
+        label="Confirm with your password",
+        widget=forms.PasswordInput(attrs={"class": "form-control", "autocomplete": "current-password"}))
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_password(self):
+        password = self.cleaned_data["password"]
+        if not self.user.check_password(password):
+            raise forms.ValidationError("Incorrect password.")
+        return password
+
+    def clean(self):
+        data = super().clean()
+        if self.user.is_superuser:
+            raise forms.ValidationError("Admin accounts can't be deleted here. Use the Django admin instead.")
+        return data
 
 
 class PredictionForm(forms.Form):

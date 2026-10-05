@@ -32,5 +32,55 @@ Predictor{% endblock %} {% block content %}
       >
     </div>
   </div>
+
+  <div class="col-md-6" id="change-email">
+    <div class="card p-4 h-100">
+      <h2 class="h5 mb-3">Email address</h2>
+      <form method="post" action="{% url 'predictor:account' %}#change-email" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="email" />
+        {% for field in email_form %} {% include "predictor/_account_field.html" %} {% endfor %}
+        <button class="btn btn-primary" type="submit">Save email</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-6" id="change-password">
+    <div class="card p-4 h-100">
+      <h2 class="h5 mb-3">Change password</h2>
+      <form method="post" action="{% url 'predictor:account' %}#change-password" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="password" />
+        {% for error in password_form.non_field_errors %}
+        <div class="text-danger small mb-2">{{ error }}</div>
+        {% endfor %} {% for field in password_form %} {% include "predictor/_account_field.html" %} {% endfor %}
+        <button class="btn btn-primary" type="submit">Change password</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-12" id="delete-account">
+    <div class="card card-danger p-4">
+      <h2 class="h5 text-danger mb-1">Delete account</h2>
+      <p class="text-muted mb-3">
+        Permanently deletes your account and your {{ prediction_count }} saved
+        prediction{{ prediction_count|pluralize }}. This can't be undone.
+      </p>
+      <form
+        method="post"
+        action="{% url 'predictor:account' %}#delete-account"
+        class="delete-form"
+        novalidate
+      >
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete" />
+        {% for error in delete_form.non_field_errors %}
+        <div class="text-danger small mb-2">{{ error }}</div>
+        {% endfor %} {% for field in delete_form %} {% include "predictor/_account_field.html" %} {% endfor %}
+        <button class="btn btn-danger" type="submit">
+          <i class="bi bi-trash me-1"></i>Delete my account
+        </button>
+      </form>
+    </div>
+  </div>
 </div>
 {% endblock %}

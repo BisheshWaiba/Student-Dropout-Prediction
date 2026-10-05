@@ -2,10 +2,11 @@ import csv
 from pathlib import Path
 
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_not_required, login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Avg, Count
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -17,7 +18,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from . import ml
-from .forms import PredictionForm, RegistrationForm
+from .forms import (AccountDeleteForm, AccountPasswordChangeForm, EmailChangeForm, PredictionForm,
+                    RegistrationForm)
 from .models import Prediction
 
 ADVICE = {
@@ -278,8 +280,43 @@ def account_login(request):
 
 @login_required
 def account(request):
+    user = request.user
+    bound = {}  # the submitted form (with its errors) replaces the fresh one of the same name
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "email":
+            form = EmailChangeForm(request.POST)
+            if form.is_valid():
+                user.email = form.cleaned_data["email"]
+                user.save(update_fields=["email"])
+                messages.success(request, "Email updated.")
+                return redirect("predictor:account")
+            bound["email_form"] = form
+        elif action == "password":
+            form = AccountPasswordChangeForm(user, request.POST)
+            if form.is_valid():
+                form.save()
+                update_session_auth_hash(request, form.user)  # keep this session logged in
+                messages.success(request, "Password changed.")
+                return redirect("predictor:account")
+            bound["password_form"] = form
+        elif action == "delete":
+            form = AccountDeleteForm(user, request.POST)
+            if form.is_valid():
+                with transaction.atomic():
+                    # Prediction.owner is SET_NULL, so delete explicitly or the student records would be orphaned.
+                    user.predictions.all().delete()
+                    user.delete()
+                logout(request)
+                messages.success(request, "Your account and saved predictions have been deleted.")
+                return redirect("predictor:login")
+            bound["delete_form"] = form
     return render(request, "predictor/account.html", {
-        "prediction_count": Prediction.objects.filter(owner=request.user).count(),
+        "prediction_count": Prediction.objects.filter(owner=user).count(),
+        "email_form": EmailChangeForm(initial={"email": user.email}),
+        "password_form": AccountPasswordChangeForm(user),
+        "delete_form": AccountDeleteForm(user),
+        **bound,
     })
 
 
