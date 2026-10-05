@@ -148,6 +148,33 @@ class AccountTests(TestCase):
         self.assertContains(response, "account-user")
 
 
+class PredictPageTests(TestCase):
+    def setUp(self):
+        if not MODEL_OK:
+            self.skipTest("Model files not found in ml_model/")
+        self.client.force_login(User.objects.create_user(username="form-user", password="StrongPass123!"))
+
+    def test_form_is_grouped_into_labelled_sections(self):
+        response = self.client.get(reverse("predictor:predict"))
+        for title in ("Student background", "Admission", "Finances", "First semester", "Second semester"):
+            self.assertContains(response, title)
+        groups = response.context["form"].grouped_fields()
+        self.assertEqual(sum(len(fields) for _, _, fields in groups), len(response.context["form"].feature_names))
+
+    def test_hints_are_plain_language(self):
+        html = self.client.get(reverse("predictor:predict")).content.decode()
+        self.assertIn("Between 0 and 20", html)
+        self.assertIn("not above units enrolled", html)
+        self.assertNotIn("1 = ", html)  # the raw 0/1 encoding is not shown to users
+
+    def test_failed_submit_keeps_values_and_marks_invalid_fields(self):
+        bad = {**GOOD, "age_at_enrollment": 5}
+        response = self.client.post(reverse("predictor:predict"), bad)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'aria-invalid="true"')
+        self.assertContains(response, 'value="130.5"')
+
+
 class AccountManagementTests(TestCase):
     PASSWORD = "StrongPass123!"
 

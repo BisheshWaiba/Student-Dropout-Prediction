@@ -17,30 +17,39 @@ LIMITS = {
 BINARY_CHOICES = {"gender": [("1", "Male"), ("0", "Female")]}
 DEFAULT_YES_NO = [("1", "Yes"), ("0", "No")]
 
+# Short hints for yes/no fields whose label alone is ambiguous
+BINARY_HINTS = {"debtor": "Has unpaid debts", "displaced": "Lives away from home"}
+
 GROUPS = [
-    ("Student background", ["age_at_enrollment", "gender", "displaced"]),
-    ("Admission", ["admission_grade", "previous_qualification_grade"]),
-    ("Finances", ["scholarship_holder", "debtor", "tuition_fees_up_to_date"]),
-    ("First semester", ["curricular_units_1st_sem_enrolled", "curricular_units_1st_sem_approved",
-                        "curricular_units_1st_sem_grade"]),
-    ("Second semester", ["curricular_units_2nd_sem_enrolled", "curricular_units_2nd_sem_approved",
-                         "curricular_units_2nd_sem_grade"]),
+    ("Student background", "Age, gender and living situation.",
+     ["age_at_enrollment", "gender", "displaced"]),
+    ("Admission", "How the student entered the course. Grades are on a 0 to 200 scale.",
+     ["admission_grade", "previous_qualification_grade"]),
+    ("Finances", "Scholarship, debt and tuition status.",
+     ["scholarship_holder", "debtor", "tuition_fees_up_to_date"]),
+    ("First semester", "Course units and average grade. Grades are on a 0 to 20 scale.",
+     ["curricular_units_1st_sem_enrolled", "curricular_units_1st_sem_approved",
+      "curricular_units_1st_sem_grade"]),
+    ("Second semester", "Course units and average grade for semester 2.",
+     ["curricular_units_2nd_sem_enrolled", "curricular_units_2nd_sem_approved",
+      "curricular_units_2nd_sem_grade"]),
 ]
 
 
 def build_field(f):
     name, kind = f["name"], f["type"]
-    help_text = f["help"]
     if kind == "binary":
         choices = [("", "Select...")] + BINARY_CHOICES.get(name, DEFAULT_YES_NO)
         return forms.TypedChoiceField(label=f["label"], choices=choices, coerce=int, empty_value=None,
-                                      help_text=help_text, widget=forms.Select(attrs={"class": "form-select"}))
+                                      help_text=BINARY_HINTS.get(name, ""))
     lo, hi = LIMITS.get(name, (f["min"], f["max"]))
-    common = dict(label=f["label"], min_value=lo, max_value=hi,
-                  help_text=f"{help_text}. Allowed: {lo:g} to {hi:g}.")
+    hint = f"Between {lo:g} and {hi:g}"
+    if name.endswith("_approved"):
+        hint += ", not above units enrolled"
+    common = dict(label=f["label"], min_value=lo, max_value=hi, help_text=hint)
     if kind == "int":
-        return forms.IntegerField(widget=forms.NumberInput(attrs={"class": "form-control"}), **common)
-    return forms.FloatField(widget=forms.NumberInput(attrs={"class": "form-control", "step": "0.1"}), **common)
+        return forms.IntegerField(**common)
+    return forms.FloatField(widget=forms.NumberInput(attrs={"step": "0.1"}), **common)
 
 
 class RegistrationForm(UserCreationForm):
@@ -91,7 +100,7 @@ class AccountDeleteForm(forms.Form):
 class PredictionForm(forms.Form):
     student_ref = forms.CharField(
         label="Student name / ID (optional)", required=False, max_length=100,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. STU-1024"}))
+        widget=forms.TextInput(attrs={"placeholder": "e.g. STU-1024", "autocomplete": "off"}))
 
     def __init__(self, *args, meta, **kwargs):
         super().__init__(*args, **kwargs)
@@ -102,10 +111,10 @@ class PredictionForm(forms.Form):
 
     def grouped_fields(self):
         groups = []
-        for title, names in GROUPS:
+        for title, description, names in GROUPS:
             bound = [self[n] for n in names if n in self.fields]
             if bound:
-                groups.append((title, bound))
+                groups.append((title, description, bound))
         return groups
 
     def clean(self):

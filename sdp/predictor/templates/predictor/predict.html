@@ -1,36 +1,68 @@
-{% extends "predictor/base.html" %}
-{% block title %}Predict - Student Dropout Predictor{% endblock %}
+{% extends "predictor/base.html" %} {% load static %} {% block title %}Predict - Student Dropout Predictor{% endblock %}
+{% block head %}
+<link href="{% static 'predictor/formpage.css' %}" rel="stylesheet" />
+{% endblock %}
 {% block content %}
-<h2 class="mb-1">New prediction</h2>
-<p class="text-muted mb-4">Enter the student's details below. Second-semester data makes the prediction most reliable.</p>
-{% if model_error %}
-  {% include "predictor/_model_error.html" %}
-{% else %}
-<form method="post" novalidate>
-  {% csrf_token %}
-  {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
-  <div class="card p-4 mb-4">
-    <div class="row"><div class="col-md-6">
-      <label class="form-label" for="{{ form.student_ref.id_for_label }}">{{ form.student_ref.label }}</label>
-      {{ form.student_ref }}
-    </div></div>
-  </div>
-  {% for title, fields in form.grouped_fields %}
-  <div class="card p-4 mb-4">
-    <h5 class="form-section-title mb-3">{{ title }}</h5>
-    <div class="row g-3">
-      {% for field in fields %}
-      <div class="col-md-4">
-        <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field }}
-        {% for e in field.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
-        <div class="form-text">{{ field.help_text }}</div>
-      </div>
-      {% endfor %}
+<div class="fp">
+  <div class="fp-top">
+    <div>
+      <h1 class="fp-title">New prediction</h1>
+      <p class="fp-lede">
+        Enter the student's details below. Second-semester data makes the prediction most reliable.
+      </p>
     </div>
   </div>
-  {% endfor %}
-  <button class="btn btn-primary btn-lg" type="submit"><i class="bi bi-lightning-charge-fill me-1"></i>Predict</button>
-</form>
-{% endif %}
+
+  {% if model_error %}
+    {% include "predictor/_model_error.html" %}
+  {% else %}
+  <form method="post" novalidate data-predict-form>
+    {% csrf_token %}
+    {% for error in form.non_field_errors %}
+    <p class="fp-alert" role="alert">{{ error }}</p>
+    {% endfor %}
+
+    <div class="fp-panel">
+      <section class="fp-row" aria-labelledby="student-title">
+        <div class="fp-row-intro">
+          <h2 id="student-title">Student</h2>
+          <p>Optional. A name or ID helps you find this record in History later.</p>
+        </div>
+        <div class="fp-form">
+          {% include "predictor/_form_field.html" with field=form.student_ref %}
+        </div>
+      </section>
+
+      {% for title, description, fields in form.grouped_fields %}
+      <section class="fp-row" aria-labelledby="group-{{ forloop.counter }}-title">
+        <div class="fp-row-intro">
+          <h2 id="group-{{ forloop.counter }}-title">{{ title }}</h2>
+          <p>{{ description }}</p>
+        </div>
+        <div class="fp-fields">
+          {% for field in fields %}{% include "predictor/_form_field.html" %}{% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+
+    <div class="fp-actions">
+      <div class="fp-progress" data-progress hidden>
+        <span class="fp-progress-text"
+          ><span data-progress-count>0</span> of {{ form.feature_names|length }} fields complete</span
+        >
+        <span class="fp-progress-track" aria-hidden="true"><span data-progress-bar></span></span>
+      </div>
+      <button class="btn fp-btn fp-btn-primary" type="submit">
+        <span class="spinner-border spinner-border-sm" aria-hidden="true" hidden></span>
+        <i class="bi bi-lightning-charge-fill" aria-hidden="true"></i>
+        <span data-submit-label>Predict</span>
+      </button>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'predictor/predict.js' %}" defer></script>
 {% endblock %}
