@@ -53,22 +53,23 @@ class RegistrationForm(UserCreationForm):
 
 class EmailChangeForm(forms.Form):
     email = forms.EmailField(label="Email address", max_length=254,
-                             widget=forms.EmailInput(attrs={"class": "form-control", "autocomplete": "email"}))
+                             widget=forms.EmailInput(attrs={"autocomplete": "email"}))
 
 
 class AccountPasswordChangeForm(PasswordChangeForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.widget.attrs["class"] = "form-control"
         # Django autofocuses this field, which would scroll the Account page down to it on every load.
         self.fields["old_password"].widget.attrs.pop("autofocus", None)
+        self.fields["old_password"].label = "Current password"
+        self.fields["new_password2"].label = "Confirm new password"
+        self.fields["new_password2"].help_text = ""
 
 
 class AccountDeleteForm(forms.Form):
     password = forms.CharField(
         label="Confirm with your password",
-        widget=forms.PasswordInput(attrs={"class": "form-control", "autocomplete": "current-password"}))
+        widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}))
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(*args, **kwargs)

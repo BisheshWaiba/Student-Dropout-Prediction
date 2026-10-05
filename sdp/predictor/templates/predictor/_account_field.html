@@ -1,8 +1,25 @@
-<div class="mb-3">
-  <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-  {{ field }} {% for error in field.errors %}
-  <div class="text-danger small mt-1">{{ error }}</div>
+<div class="acct-field">
+  <label class="acct-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {% if field.field.widget.input_type == "password" %}
+  <div class="acct-control">
+    {{ field }}
+    <button
+      type="button"
+      class="acct-reveal"
+      data-reveal="{{ field.id_for_label }}"
+      aria-label="Show password"
+      aria-pressed="false"
+      hidden
+    >
+      <i class="bi bi-eye" aria-hidden="true"></i>
+    </button>
+  </div>
+  {% else %} {{ field }} {% endif %} {% for error in field.errors %}
+  <p class="acct-error">
+    <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+    <span>{{ error }}</span>
+  </p>
   {% endfor %} {% if field.help_text %}
-  <div class="form-text">{{ field.help_text|safe }}</div>
+  <div class="acct-help">{{ field.help_text|safe }}</div>
   {% endif %}
 </div>
