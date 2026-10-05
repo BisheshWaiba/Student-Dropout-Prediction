@@ -48,11 +48,13 @@ class AccountTests(TestCase):
     def test_registration_login_and_logout(self):
         response = self.client.post(reverse("predictor:register"), {
             "username": "new-user",
+            "email": "new-user@example.com",
             "password1": "StrongPass123!",
             "password2": "StrongPass123!",
         })
         self.assertRedirects(response, reverse("predictor:home"))
         self.assertIn("_auth_user_id", self.client.session)
+        self.assertEqual(User.objects.get(username="new-user").email, "new-user@example.com")
 
         self.client.post(reverse("predictor:logout"))
         self.assertNotIn("_auth_user_id", self.client.session)
@@ -63,6 +65,14 @@ class AccountTests(TestCase):
         })
         self.assertRedirects(response, reverse("predictor:home"))
         self.assertIn("_auth_user_id", self.client.session)
+
+    def test_registration_requires_a_valid_email(self):
+        base = {"username": "no-email", "password1": "StrongPass123!", "password2": "StrongPass123!"}
+        for email in ("", "not-an-email"):
+            response = self.client.post(reverse("predictor:register"), {**base, "email": email})
+            self.assertEqual(response.status_code, 200, email)
+            self.assertIn("email", response.context["form"].errors, email)
+        self.assertFalse(User.objects.filter(username="no-email").exists())
 
     def test_protected_pages_redirect_to_login(self):
         response = self.client.get(reverse("predictor:predict"))

@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
 
 # Hard, domain-based limits (independent of the training-data min/max)
 LIMITS = {
@@ -40,6 +41,14 @@ def build_field(f):
     if kind == "int":
         return forms.IntegerField(widget=forms.NumberInput(attrs={"class": "form-control"}), **common)
     return forms.FloatField(widget=forms.NumberInput(attrs={"class": "form-control", "step": "0.1"}), **common)
+
+
+class RegistrationForm(UserCreationForm):
+    email = forms.EmailField(label="Email", max_length=254,
+                             widget=forms.EmailInput(attrs={"autocomplete": "email"}))
+
+    class Meta(UserCreationForm.Meta):
+        fields = ("username", "email")
 
 
 class PredictionForm(forms.Form):

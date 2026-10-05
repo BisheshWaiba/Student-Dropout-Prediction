@@ -4,7 +4,7 @@ from pathlib import Path
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_not_required, login_required
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.db.models import Avg, Count
 from django.http import HttpResponse
@@ -17,7 +17,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from . import ml
-from .forms import PredictionForm
+from .forms import PredictionForm, RegistrationForm
 from .models import Prediction
 
 ADVICE = {
@@ -251,7 +251,7 @@ def delete_prediction(request, pk):
 def register(request):
     if request.user.is_authenticated:
         return redirect("predictor:account")
-    form = UserCreationForm(request.POST or None)
+    form = RegistrationForm(request.POST or None)
     if form.is_valid():
         user = form.save()
         login(request, user)

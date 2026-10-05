@@ -12,22 +12,7 @@ footer { color: #6b7280; font-size: .85rem; }
 .eyebrow { color: var(--brand); font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 @media (max-width: 576px) { .account-header { align-items: start; flex-direction: column; } }
 .avatar { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 50%; background: #fff; color: var(--brand); font-size: .85rem; font-weight: 700; line-height: 1; }
-.avatar-lg { width: 2.75rem; height: 2.75rem; background: linear-gradient(135deg, var(--brand), #3f5bd6); color: #fff; font-size: 1.1rem; }
-.navbar .navbar-nav .nav-link.profile-toggle { display: inline-flex; align-items: center; gap: .5rem; padding: .25rem .75rem .25rem .3rem; border-radius: 2rem; background: rgba(255, 255, 255, .12); transition: background .15s; }
-.navbar .navbar-nav .nav-link.profile-toggle:hover, .navbar .navbar-nav .nav-link.profile-toggle.show { background: rgba(255, 255, 255, .22); }
-.profile-toggle:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-.profile-name { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.profile-caret { font-size: .7rem; transition: transform .15s; }
-.profile-toggle.show .profile-caret { transform: rotate(180deg); }
-.profile-menu { min-width: 16rem; margin-top: .5rem; padding: .5rem; border: 0; border-radius: .9rem; box-shadow: 0 8px 28px rgba(20, 30, 80, .18); }
-.profile-head { display: flex; align-items: center; gap: .75rem; padding: .4rem .6rem .6rem; }
-.profile-head > div { min-width: 0; }
-.profile-head-name { font-weight: 600; line-height: 1.25; }
-.profile-head-email { color: #6b7280; font-size: .8rem; overflow-wrap: anywhere; }
-.profile-menu .dropdown-divider { margin: .35rem 0; }
-.profile-menu .dropdown-item { display: flex; align-items: center; gap: .6rem; padding: .5rem .6rem; border-radius: .5rem; }
-.profile-menu .dropdown-item i { color: var(--brand); font-size: 1.05rem; }
-.profile-menu .dropdown-item:active { background: var(--brand); color: #fff; }
-.profile-menu .dropdown-item:active i { color: #fff; }
-.profile-menu .dropdown-item.text-danger i { color: inherit; }
-.profile-menu .dropdown-item.text-danger:hover { background: #fdecec; }
+.navbar .navbar-nav .nav-link.profile-link { display: inline-flex; padding: .25rem; border-radius: 50%; }
+.profile-link .avatar { transition: box-shadow .15s; }
+.profile-link:hover .avatar { box-shadow: 0 0 0 3px rgba(255, 255, 255, .35); }
+.profile-link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
