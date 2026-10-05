@@ -47,24 +47,49 @@
             </li>
             <li class="nav-item dropdown">
               <a
-                class="nav-link dropdown-toggle"
+                class="nav-link profile-toggle"
                 href="#"
                 role="button"
                 data-bs-toggle="dropdown"
+                aria-expanded="false"
+                aria-label="Account menu for {{ user.username }}"
               >
-                <i class="bi bi-person-circle me-1"></i>{{ user.username }}
+                <span class="avatar" aria-hidden="true"
+                  >{{ user.username|slice:":1"|upper }}</span
+                >
+                <span class="profile-name">{{ user.username }}</span>
+                <i class="bi bi-chevron-down profile-caret" aria-hidden="true"></i>
               </a>
-              <ul class="dropdown-menu dropdown-menu-end">
+              <ul class="dropdown-menu dropdown-menu-end profile-menu">
+                <li class="profile-head">
+                  <span class="avatar avatar-lg" aria-hidden="true"
+                    >{{ user.username|slice:":1"|upper }}</span
+                  >
+                  <div>
+                    <div class="profile-head-name">{{ user.username }}</div>
+                    <div class="profile-head-email">
+                      {{ user.email|default:"No email added" }}
+                    </div>
+                  </div>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
                 <li>
                   <a class="dropdown-item" href="{% url 'predictor:account' %}"
-                    >Account</a
+                    ><i class="bi bi-person"></i>Account</a
+                  >
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'predictor:history' %}"
+                    ><i class="bi bi-clock-history"></i>My predictions</a
                   >
                 </li>
                 <li><hr class="dropdown-divider" /></li>
                 <li>
                   <form method="post" action="{% url 'predictor:logout' %}">
                     {% csrf_token %}
-                    <button class="dropdown-item" type="submit">Log out</button>
+                    <button class="dropdown-item text-danger" type="submit">
+                      <i class="bi bi-box-arrow-right"></i>Log out
+                    </button>
                   </form>
                 </li>
               </ul>
