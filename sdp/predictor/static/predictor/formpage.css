@@ -14,7 +14,8 @@
 .fp ::selection { background: rgba(63, 91, 214, .22); }
 .fp a:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; border-radius: .2rem; }
 
-.fp-top { display: flex; gap: 1rem; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.fp-top { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.fp-top-text { flex: 1 1 22rem; min-width: 0; }
 .fp-title { margin: 0; font-size: 1.5rem; font-weight: 700; letter-spacing: -.01em; }
 
 /* Panels hold rows; a row is a title and description beside its form. */

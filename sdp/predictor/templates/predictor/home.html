@@ -1,76 +1,214 @@
-{% extends "predictor/base.html" %} {% block content %}
-<div class="hero p-5 mb-4">
-  <h1 class="fw-bold">Predict student dropout and academic success</h1>
-  <p class="lead mb-4">
-    A machine-learning early-warning tool: enter a student's academic and
-    financial details and get the probability of <b>Dropout</b>,
-    <b>Enrolled</b> or <b>Graduate</b>.
-  </p>
-  <a href="{% url 'predictor:predict' %}" class="btn btn-light btn-lg">
-    <i class="bi bi-lightning-charge-fill me-1"></i>Make a prediction
-  </a>
+{% extends "predictor/base.html" %} {% load static %} {% block title %}Dashboard - Student Dropout Predictor{% endblock %}
+{% block head %}
+<link href="{% static 'predictor/formpage.css' %}" rel="stylesheet" />
+<link href="{% static 'predictor/home.css' %}" rel="stylesheet" />
+{% endblock %}
+{% block content %}
+<div class="fp fp-wide">
+  <div class="fp-top">
+    <div class="fp-top-text">
+      <h1 class="fp-title">Dashboard</h1>
+      <p class="fp-lede">A snapshot of your predictions and the model behind them.</p>
+    </div>
+    <a href="{% url 'predictor:predict' %}" class="btn fp-btn fp-btn-primary">
+      <i class="bi bi-lightning-charge-fill" aria-hidden="true"></i>New prediction
+    </a>
+  </div>
+
+  {% if model_error %}{% include "predictor/_model_error.html" %}{% endif %}
+
+  <div class="fp-panel home-kpis">
+    <div class="home-kpi">
+      <p class="home-kpi-label">Predictions</p>
+      <p class="home-kpi-value">{{ total }}</p>
+      <p class="home-kpi-note">Saved to your history</p>
+    </div>
+    <div class="home-kpi">
+      <p class="home-kpi-label">High dropout risk</p>
+      <p class="home-kpi-value">{{ high_risk }}</p>
+      <p class="home-kpi-note">Dropout probability of {{ high_risk_pct }}% or more</p>
+    </div>
+    <div class="home-kpi">
+      <p class="home-kpi-label">Average dropout probability</p>
+      <p class="home-kpi-value">{% if avg_dropout_pct is None %}&ndash;{% else %}{{ avg_dropout_pct }}%{% endif %}</p>
+      <p class="home-kpi-note">{% if total %}Across all your predictions{% else %}Needs at least one prediction{% endif %}</p>
+    </div>
+    {% if meta %}
+    <div class="home-kpi">
+      <p class="home-kpi-label">Model accuracy</p>
+      <p class="home-kpi-value">{{ accuracy_pct|floatformat:1 }}%</p>
+      <p class="home-kpi-note">On students held out from training</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="home-grid">
+    <div class="home-left">
+      {% if sample %}
+      <div class="fp-panel home-callout">
+        <span class="home-callout-icon" aria-hidden="true"><i class="bi bi-bar-chart-line"></i></span>
+        <div class="home-callout-text">
+          <strong>No predictions yet</strong>
+          <p>Sample data is shown below.</p>
+        </div>
+        <a href="{% url 'predictor:predict' %}" class="btn fp-btn fp-btn-primary">
+          <i class="bi bi-lightning-charge-fill" aria-hidden="true"></i>Make your first prediction
+        </a>
+      </div>
+      {% endif %}
+      <div class="fp-panel home-recent{% if sample %} home-sample{% endif %}">
+        <div class="home-head">
+          <h2>Recent predictions</h2>
+          {% if sample %}<span class="home-badge">Sample data</span>{% else %}<a href="{% url 'predictor:history' %}">View all {{ total }}</a>{% endif %}
+        </div>
+        <div class="home-table-wrap"{% if sample %} aria-hidden="true"{% endif %}>
+          <table class="home-table">
+            <caption class="visually-hidden">Your most recent predictions</caption>
+            <thead>
+              <tr>
+                <th scope="col">Student</th>
+                <th scope="col">Outcome</th>
+                <th scope="col">Dropout risk</th>
+                <th scope="col" class="d-none d-sm-table-cell">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in recent %}
+              <tr>
+                <td>
+                  {% if sample %}<span class="home-student">{{ p.student_ref }}</span>{% else %}<a class="home-student" href="{% url 'predictor:result' p.pk %}"
+                    >{{ p.student_ref|default:"Unnamed student" }}</a
+                  >{% endif %}
+                </td>
+                <td>
+                  <span class="home-pill home-pill-{{ p.predicted_label|lower }}">{{ p.predicted_label }}</span>
+                </td>
+                <td class="home-num">
+                  <span{% if p.risk == "High" %} class="home-risk-high"{% endif %}>{{ p.risk }}</span>
+                  <span class="home-muted">{% widthratio p.prob_dropout 1 100 %}%</span>
+                </td>
+                <td class="home-num home-muted d-none d-sm-table-cell">{{ p.created_at|date:"j M Y" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="fp-panel home-outcomes{% if sample %} home-sample{% endif %}">
+        <div class="home-head">
+          <h2>Predicted outcomes</h2>
+          {% if sample %}<span class="home-badge">Sample data</span>{% endif %}
+        </div>
+        <div class="home-body"{% if sample %} aria-hidden="true"{% endif %}>
+          <div
+            class="home-stack"
+            role="img"
+            aria-label="Predicted outcomes: {% for r in outcomes %}{{ r.label }} {{ r.count }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+          >
+            {% for r in outcomes %}{% if r.count %}<span
+              class="home-seg home-seg-{{ r.label|lower }}"
+              style="--n: {{ r.count }}"
+              title="{{ r.label }}: {{ r.count }} ({{ r.pct }}%)"
+            ></span>{% endif %}{% endfor %}
+          </div>
+          <ul class="home-legend" role="list">
+            {% for r in outcomes %}
+            <li>
+              <span class="home-swatch home-seg-{{ r.label|lower }}" aria-hidden="true"></span>
+              <span class="home-legend-label">{{ r.label }}</span>
+              <span class="home-legend-count">{{ r.count }}</span>
+              <span class="home-legend-pct">{{ r.pct }}%</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    {% if meta %}
+      <div class="fp-panel home-factors">
+        <div class="home-head"><h2>What the model relies on</h2></div>
+        <div class="home-body">
+          <p class="home-caption">Drop in macro-F1 when a factor is shuffled. These are signals the model uses, not causes.</p>
+          <ul class="home-bars" role="list">
+            {% for f in factors %}
+            <li>
+              <div class="home-bar-head">
+                <span>{{ f.label }}</span>
+                <span class="home-bar-value">{{ f.value|floatformat:2 }}</span>
+              </div>
+              <div class="home-bar" aria-hidden="true"><span style="--w: {{ f.pct|stringformat:'.1f' }}"></span></div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <div class="fp-panel home-model">
+        <div class="home-head"><h2>About the model</h2></div>
+        <div class="home-body">
+          <dl class="home-facts">
+            <div><dt>Model</dt><dd>{{ meta.model_name }}</dd></div>
+            <div><dt>Test accuracy</dt><dd>{{ accuracy_pct|floatformat:1 }}%</dd></div>
+            <div><dt>Macro F1</dt><dd>{{ meta.metrics.macro_f1|floatformat:3 }}</dd></div>
+            <div><dt>ROC-AUC (OvR)</dt><dd>{{ meta.metrics.roc_auc_ovr|floatformat:3 }}</dd></div>
+            <div>
+              <dt>Students</dt>
+              <dd>{{ meta.train_size|floatformat:"0g" }} train / {{ meta.test_size|floatformat:"0g" }} test</dd>
+            </div>
+          </dl>
+          <p class="home-note">The Enrolled outcome is the hardest to predict.</p>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="fp-panel home-how">
+      <section class="fp-row" aria-labelledby="how-title">
+        <div class="fp-row-intro">
+          <h2 id="how-title">How it works</h2>
+          <p>
+            A machine-learning early-warning tool: it returns the probability of
+            Dropout, Enrolled or Graduate from a student's academic and financial
+            details.
+          </p>
+        </div>
+        <ol class="home-steps" role="list">
+          <li>
+            <span class="home-step-n" aria-hidden="true">1</span>
+            <div>
+              <strong>Enter details</strong>
+              <p>
+                Fill in 14 simple fields: age, grades, scholarship, tuition status
+                and semester results.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="home-step-n" aria-hidden="true">2</span>
+            <div>
+              <strong>Get a prediction</strong>
+              <p>
+                {% if meta %}A trained {{ meta.model_name }} model returns
+                probabilities for all three outcomes.{% else %}A trained
+                scikit-learn model returns probabilities for all three
+                outcomes.{% endif %}
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="home-step-n" aria-hidden="true">3</span>
+            <div>
+              <strong>Take action</strong>
+              <p>
+                Each result includes a risk level and suggested support actions.
+                All predictions are saved to the history.
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+    </div>
+  </div>
 </div>
-
-{% if model_error %} {% include "predictor/_model_error.html" %} {% endif %}
-
-<div class="row g-4 mb-4">
-  <div class="col-md-4">
-    <div class="card h-100 p-4">
-      <h5><i class="bi bi-1-circle text-primary me-2"></i>Enter details</h5>
-      <p class="mb-0 text-muted">
-        Fill in 14 simple fields: age, grades, scholarship, tuition status and
-        semester results.
-      </p>
-    </div>
-  </div>
-
-  <div class="col-md-4">
-    <div class="card h-100 p-4">
-      <h5><i class="bi bi-2-circle text-primary me-2"></i>Get a prediction</h5>
-      <p class="mb-0 text-muted">
-        {% if meta %} A trained {{ meta.model_name }} model returns
-        probabilities for all three outcomes. {% else %} A trained scikit-learn
-        model returns probabilities for all three outcomes. {% endif %}
-      </p>
-    </div>
-  </div>
-
-  <div class="col-md-4">
-    <div class="card h-100 p-4">
-      <h5><i class="bi bi-3-circle text-primary me-2"></i>Take action</h5>
-      <p class="mb-0 text-muted">
-        Each result includes a risk level and suggested support actions. All
-        predictions are saved to the history.
-      </p>
-    </div>
-  </div>
-</div>
-
-{% if meta %}
-<div class="row g-4 text-center">
-  <div class="col-6 col-md-3">
-    <div class="card p-3">
-      <div class="stat-value">{{ accuracy_pct|floatformat:1 }}%</div>
-      Test accuracy
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3">
-      <div class="stat-value">{{ meta.metrics.macro_f1|floatformat:3 }}</div>
-      Macro F1
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3">
-      <div class="stat-value">{{ meta.metrics.roc_auc_ovr|floatformat:3 }}</div>
-      ROC-AUC (OvR)
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3">
-      <div class="stat-value">{{ total }}</div>
-      Predictions made
-    </div>
-  </div>
-</div>
-{% endif %} {% endblock %}
+{% endblock %}

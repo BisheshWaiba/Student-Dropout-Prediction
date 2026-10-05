@@ -58,10 +58,14 @@ def load_comparison():
     return rows
 
 
+HIGH_RISK = 0.50
+MODERATE_RISK = 0.25
+
+
 def risk_level(p_dropout):
-    if p_dropout >= 0.50:
+    if p_dropout >= HIGH_RISK:
         return "High"
-    if p_dropout >= 0.25:
+    if p_dropout >= MODERATE_RISK:
         return "Moderate"
     return "Low"
 

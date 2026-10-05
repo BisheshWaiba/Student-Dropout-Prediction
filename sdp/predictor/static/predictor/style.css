@@ -1,4 +1,6 @@
 :root { --brand: #2c3e91; --brand-dark: #1f2b66; }
+/* One page gutter for the navbar and every page, so their edges line up (Bootstrap's default is 1.5rem). */
+.container { --bs-gutter-x: 2rem; }
 body { background: #f5f7fb; }
 .navbar { background: linear-gradient(90deg, var(--brand-dark), var(--brand)); }
 .hero { background: linear-gradient(135deg, var(--brand-dark), #3f5bd6); color: #fff; border-radius: 1rem; }

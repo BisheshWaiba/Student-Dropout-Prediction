@@ -43,6 +43,81 @@ class HomePageTests(TestCase):
         self.assertContains(response, f"{accuracy:.1f}%")
         self.assertNotContains(response, f"{accuracy / 100:.2f}%")
 
+    def test_empty_state_points_to_the_first_prediction(self):
+        response = self.client.get(reverse("predictor:home"))
+        self.assertContains(response, "No predictions yet")
+        self.assertContains(response, "Make your first prediction")
+        self.assertNotContains(response, "View all")
+        # the panels show clearly labelled sample data instead of sitting empty
+        self.assertTrue(response.context["sample"])
+        self.assertContains(response, "Sample data")
+        self.assertContains(response, "Student A")
+
+    def test_recent_predictions_are_listed_for_the_owner_only(self):
+        me = User.objects.get(username="home-user")
+        other = User.objects.create_user(username="someone-else", password="StrongPass123!")
+        mine = Prediction.objects.create(owner=me, student_ref="STU-MINE", inputs={}, predicted_label="Dropout",
+                                         prob_dropout=0.8, prob_enrolled=0.1, prob_graduate=0.1)
+        Prediction.objects.create(owner=other, student_ref="STU-THEIRS", inputs={}, predicted_label="Graduate",
+                                  prob_dropout=0.1, prob_enrolled=0.1, prob_graduate=0.8)
+        response = self.client.get(reverse("predictor:home"))
+        self.assertContains(response, "STU-MINE")
+        self.assertContains(response, reverse("predictor:result", args=[mine.pk]))
+        self.assertContains(response, "View all 1")
+        self.assertNotContains(response, "STU-THEIRS")
+        self.assertNotContains(response, "No predictions yet")
+        self.assertFalse(response.context["sample"])
+        self.assertNotContains(response, "Sample data")
+        self.assertNotContains(response, "Student A")
+
+    def _make(self, owner, label, p_dropout):
+        rest = (1 - p_dropout) / 2
+        return Prediction.objects.create(owner=owner, inputs={}, predicted_label=label, prob_dropout=p_dropout,
+                                         prob_enrolled=rest, prob_graduate=rest)
+
+    def test_dashboard_stats_cover_only_the_owners_predictions(self):
+        me = User.objects.get(username="home-user")
+        other = User.objects.create_user(username="another-user", password="StrongPass123!")
+        self._make(me, "Dropout", 0.8)
+        self._make(me, "Dropout", 0.5)
+        self._make(me, "Graduate", 0.1)
+        self._make(me, "Enrolled", 0.4)
+        for _ in range(3):
+            self._make(other, "Dropout", 0.9)  # must not leak into my numbers
+        response = self.client.get(reverse("predictor:home"))
+        self.assertEqual(response.context["total"], 4)
+        self.assertEqual(response.context["high_risk"], 2)  # 0.8 and 0.5 (threshold is inclusive)
+        self.assertEqual(response.context["avg_dropout_pct"], 45)  # (0.8 + 0.5 + 0.1 + 0.4) / 4
+        counts = {o["label"]: o["count"] for o in response.context["outcomes"]}
+        self.assertEqual(counts, {"Dropout": 2, "Enrolled": 1, "Graduate": 1})
+        self.assertContains(response, 'role="img"')  # the outcome chart is present
+
+    def test_dashboard_with_no_predictions_shows_placeholders_not_charts(self):
+        response = self.client.get(reverse("predictor:home"))
+        self.assertEqual(response.context["high_risk"], 0)
+        self.assertIsNone(response.context["avg_dropout_pct"])
+        self.assertContains(response, "home-callout")
+        # sample content is hidden from assistive tech so it is never read out as real data
+        self.assertContains(response, '<div class="home-body" aria-hidden="true">')
+        self.assertContains(response, '<div class="home-table-wrap" aria-hidden="true">')
+
+    def test_top_factors_are_listed_most_important_first(self):
+        factors = self.client.get(reverse("predictor:home")).context["factors"]
+        self.assertEqual(len(factors), 8)
+        self.assertEqual(factors[0]["pct"], 100)
+        self.assertEqual([f["value"] for f in factors], sorted((f["value"] for f in factors), reverse=True))
+
+    def test_only_the_five_newest_predictions_are_shown(self):
+        me = User.objects.get(username="home-user")
+        for i in range(7):
+            Prediction.objects.create(owner=me, student_ref=f"STU-{i}", inputs={}, predicted_label="Graduate",
+                                      prob_dropout=0.1, prob_enrolled=0.1, prob_graduate=0.8)
+        response = self.client.get(reverse("predictor:home"))
+        self.assertEqual(len(response.context["recent"]), 5)
+        self.assertContains(response, "STU-6")
+        self.assertNotContains(response, "STU-1<")  # oldest are left out
+        self.assertContains(response, "View all 7")
+
 
 class AccountTests(TestCase):
     def test_registration_login_and_logout(self):

@@ -1,5 +1,6 @@
 import csv
 from pathlib import Path
+from types import SimpleNamespace
 
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
@@ -7,9 +8,10 @@ from django.contrib.auth.decorators import login_not_required, login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from rest_framework import status
@@ -50,6 +52,17 @@ FIGURE_CAPTIONS = {
     "07_confusion_matrix.png": "Confusion matrix",
     "08_feature_importance.png": "Feature importance",
 }
+
+
+# Shown (clearly labelled) on the dashboard until the user has made a prediction, so the panels are not empty.
+SAMPLE_OUTCOME_COUNTS = {"Dropout": 2, "Enrolled": 3, "Graduate": 7}
+SAMPLE_RECENT = [("Student A", "Graduate", 0.09), ("Student B", "Dropout", 0.71)]
+
+
+def _sample_recent():
+    now = timezone.now()
+    return [SimpleNamespace(student_ref=ref, predicted_label=label, prob_dropout=p, risk=ml.risk_level(p),
+                            created_at=now) for ref, label, p in SAMPLE_RECENT]
 
 
 def _meta_or_none():
@@ -152,10 +165,32 @@ def api_predict(request):
 
 def home(request):
     meta, error = _meta_or_none()
-    return render(request, "predictor/home.html", {"meta": meta, "model_error": error,
-                                                   "accuracy_pct": meta["metrics"]["accuracy"] * 100 if meta else None,
-                                                   "total": Prediction.objects.filter(owner=request.user).count()
-                                                   if request.user.is_authenticated else 0})
+    mine = (Prediction.objects.filter(owner=request.user) if request.user.is_authenticated
+            else Prediction.objects.none())
+    total = mine.count()
+    counts = {r["predicted_label"]: r["n"] for r in mine.values("predicted_label").annotate(n=Count("id"))}
+    sample = total == 0
+    shown, shown_total = (SAMPLE_OUTCOME_COUNTS, sum(SAMPLE_OUTCOME_COUNTS.values())) if sample else (counts, total)
+    outcomes = [{"label": label, "count": shown.get(label, 0),
+                 "pct": round(shown.get(label, 0) * 100 / shown_total) if shown_total else 0} for label in ADVICE]
+    stats = mine.aggregate(avg=Avg("prob_dropout"), high=Count("id", filter=Q(prob_dropout__gte=ml.HIGH_RISK)))
+
+    factors = []
+    if meta:
+        labels = {f["name"]: f["label"] for f in meta["features"]}
+        top = [(n, v) for n, v in sorted((meta.get("feature_importance") or {}).items(), key=lambda kv: -kv[1])
+               if v > 0][:8]
+        for name, value in top:
+            factors.append({"label": labels.get(name, name), "value": value, "pct": value / top[0][1] * 100})
+
+    return render(request, "predictor/home.html", {
+        "meta": meta, "model_error": error,
+        "accuracy_pct": meta["metrics"]["accuracy"] * 100 if meta else None,
+        "total": total, "recent": _sample_recent() if sample else mine[:5], "sample": sample,
+        "outcomes": outcomes, "factors": factors,
+        "high_risk": stats["high"], "high_risk_pct": round(ml.HIGH_RISK * 100),
+        "avg_dropout_pct": round(stats["avg"] * 100) if stats["avg"] is not None else None,
+    })
 
 
 @login_required
