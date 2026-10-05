@@ -21,13 +21,10 @@
 .home-left { display: flex; flex-direction: column; gap: 1.5rem; }
 .home-left > :last-child { flex: 1; } /* keeps the row even when there is little data */
 .home-grid .fp-panel { margin-top: 0; }
-.home-how .fp-row { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 1.5rem; }
 @media (min-width: 992px) {
   .home-grid { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
   .home-left { grid-column: 1; grid-row: 1; }
   .home-factors { grid-column: 2; grid-row: 1; }
-  .home-how { grid-column: 1; grid-row: 2; }
-  .home-model { grid-column: 2; grid-row: 2; }
 }
 .home-body { padding: 1.25rem 1.5rem 1.5rem; }
 .home-caption { margin: 0 0 1rem; font-size: .8125rem; line-height: 1.5; color: var(--muted); }
@@ -86,19 +83,3 @@
 .home-callout-text p { margin: .15rem 0 0; font-size: .875rem; line-height: 1.5; color: var(--muted); }
 .home-badge { padding: .15rem .65rem; font-size: .75rem; font-weight: 600; color: var(--muted); background: #eef1fa; border-radius: 1rem; }
 .home-sample .home-table-wrap, .home-sample .home-body { opacity: .5; pointer-events: none; user-select: none; }
-
-/* How it works */
-.home-steps { display: grid; gap: 1.1rem; margin: 0; padding: 0; list-style: none; }
-.home-steps li { display: grid; grid-template-columns: 1.75rem minmax(0, 1fr); gap: .75rem; align-items: start; }
-.home-step-n { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; font-size: .8125rem; font-weight: 700; color: var(--brand); background: #eaeefb; border-radius: 50%; }
-.home-steps strong { display: block; font-size: .9375rem; }
-.home-steps p { max-width: 62ch; margin: .15rem 0 0; font-size: .875rem; line-height: 1.5; color: var(--muted); }
-
-/* About the model */
-.home-facts { display: grid; margin: 0; }
-.home-facts > div { display: flex; gap: 1rem; align-items: baseline; justify-content: space-between; padding: .55rem 0; font-size: .9375rem; border-bottom: 1px solid var(--line); }
-.home-facts > div:first-child { padding-top: 0; }
-.home-facts > div:last-child { border-bottom: 0; }
-.home-facts dt { font-weight: 400; color: var(--muted); }
-.home-facts dd { margin: 0; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
-.home-note { margin: .9rem 0 0; font-size: .8125rem; line-height: 1.5; color: var(--muted); }

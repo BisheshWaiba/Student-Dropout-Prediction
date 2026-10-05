@@ -145,70 +145,7 @@
         </div>
       </div>
 
-      <div class="fp-panel home-model">
-        <div class="home-head"><h2>About the model</h2></div>
-        <div class="home-body">
-          <dl class="home-facts">
-            <div><dt>Model</dt><dd>{{ meta.model_name }}</dd></div>
-            <div><dt>Test accuracy</dt><dd>{{ accuracy_pct|floatformat:1 }}%</dd></div>
-            <div><dt>Macro F1</dt><dd>{{ meta.metrics.macro_f1|floatformat:3 }}</dd></div>
-            <div><dt>ROC-AUC (OvR)</dt><dd>{{ meta.metrics.roc_auc_ovr|floatformat:3 }}</dd></div>
-            <div>
-              <dt>Students</dt>
-              <dd>{{ meta.train_size|floatformat:"0g" }} train / {{ meta.test_size|floatformat:"0g" }} test</dd>
-            </div>
-          </dl>
-          <p class="home-note">The Enrolled outcome is the hardest to predict.</p>
-        </div>
-      </div>
     {% endif %}
-
-    <div class="fp-panel home-how">
-      <section class="fp-row" aria-labelledby="how-title">
-        <div class="fp-row-intro">
-          <h2 id="how-title">How it works</h2>
-          <p>
-            A machine-learning early-warning tool: it returns the probability of
-            Dropout, Enrolled or Graduate from a student's academic and financial
-            details.
-          </p>
-        </div>
-        <ol class="home-steps" role="list">
-          <li>
-            <span class="home-step-n" aria-hidden="true">1</span>
-            <div>
-              <strong>Enter details</strong>
-              <p>
-                Fill in 14 simple fields: age, grades, scholarship, tuition status
-                and semester results.
-              </p>
-            </div>
-          </li>
-          <li>
-            <span class="home-step-n" aria-hidden="true">2</span>
-            <div>
-              <strong>Get a prediction</strong>
-              <p>
-                {% if meta %}A trained {{ meta.model_name }} model returns
-                probabilities for all three outcomes.{% else %}A trained
-                scikit-learn model returns probabilities for all three
-                outcomes.{% endif %}
-              </p>
-            </div>
-          </li>
-          <li>
-            <span class="home-step-n" aria-hidden="true">3</span>
-            <div>
-              <strong>Take action</strong>
-              <p>
-                Each result includes a risk level and suggested support actions.
-                All predictions are saved to the history.
-              </p>
-            </div>
-          </li>
-        </ol>
-      </section>
-    </div>
   </div>
 </div>
 {% endblock %}
